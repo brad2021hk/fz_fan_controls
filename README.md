@@ -1,15 +1,16 @@
 # fz_fan_controls
  Analyzing radio signals of a simple ceiling fan and python script to generate flipper zero .sub files.  
 
- ## Commnad Line
-
-   -
 
 # Motivation
 
 I recently got a Flipper Zero and wanted to learn the sub-Ghz radio features.  I initially looked at some more complex radios, but decided I had too many knowledge gaps.  So, I picked the simplest radio transmitter I could find in the house.  I have never worked with radio transceivers professionally or as a hobby.  The closest thing I've looked at is IR remote transmitters and receivers.  This was a good method to learn how to use the "Raw Read" feature and interpret the captured files.  Then write a simple script to generate the files and control the radio.  I also found the documentation of these simple fan control protocols is sparse.  
 
 # The Fan Hardware
+
+![Handheld Remote](images/remote.jpg "Fan Remote")
+
+![Wall Control](images/wall_control.jpg "Wall Control")
 
 I wasn't motivated enough to take apart the remote or pull the wall control out, so I basically looked on Amazon to find a similar looking fan control.  I found [this](https://www.amazon.com/Eogifee-Universal-Ceiling-Control-UC-9050T/dp/B08DM49LHV/ref=sr_1_50?crid=105P4GFNQWPR0&keywords=fan%2Bremote&qid=1674324698&sprefix=fan%2Bremot%2Caps%2C146&sr=8-50&th=1).  Basically, this looks to be a copy of an older Harbor Breeze fan control.  This particular device used a 303.9Mhz radio and has the same dip switches as my remote.  Presumably it is similar.
 
@@ -19,19 +20,33 @@ I setup the Flipper Zero to do Read RAW at 303.875Mhz with AM650 modulation, bas
 
 Here's the first capture pressing the "Low" button.  It seems to be a bunch of repeated sequences.  
 
+![Initial Capture](images/initial_captures.png)
+
 ## Button Press Encoding
 
 Zooming in one sequence, this is what we see.  In order to understand what the pulses mean, we need to capture different button presses.  I included images of the "Low" and "Medium" buttons.  I captured all 5 buttons on the remote.  
 
+![Zoomed In Low](images/zoomed_lr_low_capture.png "Zoomed In Capture of Low Sequence")
+
+![Zoomed In Medium](images/zoomed_lr_med_capture.png "Zoomed in Caputre of Medium Sequence")
+
 First off, this appears to be PWM encoding.  I have looked at IR remote encoding before and this does not look like the NEC or Manchester encoding I've seen in the past.  An encoded 0 looks like a longer low period followed by a short high period.  A 1 looks like a short low period followed by a long high period.  I may have that backwards, but as long as I'm consistent, the signals can be decoded.  
+
+![Annotate a zero bit and a 1 bit](images/zoomed_lr_low_zero_one.png "Bit Encoding")
 
 From looking at all 5 button presses, I found the last 6 bits of the sequence encode the button.  If all 6 bits are 0b, then it is transmitting that no button is pressed.  Each bit represents a different button.  The remote only has 5 buttons, so one of the bits is not used.  Presumably that was for expansion that never happened or different hardware with more features.  Maybe there is a version where the remote has a fan reverse button.  Later, I hacked together a .sub file that encoded this unused button and it did not seem to do anything with my fans.  
 
 The below image shows the button bit positions.  
 
+![Annotated to show button bit positions](images/zoomed_lr_low_buttons.png "Button Encoding")
+
 ## Fan Address Encoding
 
-After determining which bits in the sequence represent button pushes, I wanted to understand how the dip switches on the remote influence the sequence.  Some documentation for the remotes refer to the switches as setting the "frequency."  This is wrong.  The remote seems to transmit on the same frequency and use the same period for the bit patterns no matter what dip switch setting is used.  Here are two captures with different dip switch settings.  
+After determining which bits in the sequence represent button pushes, I wanted to understand how the dip switches on the remote influence the sequence.  Some documentation for the remotes refer to the switches as setting the "frequency."  This is wrong.  The remote seems to transmit on the same frequency and use the same period for the bit patterns no matter what dip switch setting is used.  Here are two captures with different dip switch settings. 
+
+![Fan Sequence Switch 0001b](images/zoomed_f0001_off_annotate.png "Fan Sequence with Switches in 0001b Position")
+
+![Fan Seqence Switch 0010b](images/zoomed_f0010_off_annotate.png "Fan Sequence with Switches in 0010b Position")
 
 The highlighted bit sequence encodes the dip switch settings.  Presumably, the fan canopy module matches the address pattern with its own dip switch settings to determine if it should react to the sequence.  The 4 switches allow encoding of up to 16 different fan addresses.  That should cover most residential installations.  
 
@@ -39,13 +54,19 @@ The highlighted bit sequence encodes the dip switch settings.  Presumably, the f
 
 The remotes have a dip switch to enable dimmer control of the light.  This seems to simply change one bit in the sequence.  If the dip switch is set, the bit is transmitted as a 1, if not, it is sent as a zero.  
 
+![Fan Sequence Annotate Dimmer Bit](images/zoomed_f0010_off_dim.png "Show Dimmer Bit Position")
+
 ## Start Sequence
 
 The transmit pattern always starts with a short high pulse, short low pulse and then a long high pulse.  This is kind of like a 01b start sequence.  No matter what switch settings or button is pressed, the sequence seems to start with this 01b sequence.  
 
+![Fan Sequence Start Field](images/zoomed_lr_low_start.png "Show Start Sequence")
+
 ## Put it all together
 
 This image shows one full sequence.  
+
+![Annotate All Fields](images/zoomed_lr_low_fields.png "Annotate All Fields")
 
 ## A Full Transmission
 
