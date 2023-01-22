@@ -3,6 +3,8 @@ import argparse
 # Constants
 address_length = 4  # Length of the fan module address
 command_length = 6  # Length of the command.  
+cycle_time = 1020
+sequence_gap = 11500
 
 # Write the PWM encoding to the specified file.  It takes an integer in value, converts to binary and then writes a PWM encoding for each bit.  
 # It starts with the MSB on the left.  
@@ -81,10 +83,9 @@ subHeader = ["Filetype: Flipper SubGhz RAW File\n", "Version: 1\n", "Frequency: 
 # Positive number is amount of time signal is high
 # For a cycle time like 1020us, a bit high will be encoded as driving the signal low for
 # 340us and high for 680us.  This seems like a simple pwm encouding.  
-cycleTime = 1020
-bit_high = "-%d %d " % (cycleTime/3, cycleTime/1.5)
-bit_low = "-%d %d " % (cycleTime/1.5, cycleTime/3)
-leading_zero = "-%d %d " % (11500, cycleTime/3)
+bit_high = "-%d %d " % (cycle_time/3, cycle_time/1.5)
+bit_low = "-%d %d " % (cycle_time/1.5, cycle_time/3)
+leading_zero = "-%d %d " % (sequence_gap, cycle_time/3)
 
 # Observed commands.  Each button on the remote has an associated bit in the 6-bit command field.  
 # Encoding 0x04 does not do anything with my hardware.  Maybe it supports reverse or another feature
