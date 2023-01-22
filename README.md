@@ -76,7 +76,7 @@ The remote should send multiple sequences to improve reliability.  There is no d
 
 # The Python Script
 
-The script generates .sub files to control a fan.  I wanted to prove I could generate a correct .sub file based on decoding the packet and then play that .sub file on the Flipper Zero.  The samples I captured indicate a full bit is transmitted in 1020us on average.  The script splits the 1020us cycle time into 1/3 and 2/3 time for the low or high part of the cycle.  A zero is transmitted as 2/3\*1020us low and 1/3\*1020us high.  A one is transmitted as 1/3*1020us Low and 2/3*1020us high.  
+The script generates .sub files to control a fan.  I wanted to prove I could generate a correct .sub file based on decoding the packet and then play that .sub file on the Flipper Zero.  The samples I captured indicate a full bit is transmitted in 1020us on average.  The script splits the 1020us cycle time into 1/3 and 2/3 time for the low or high part of the cycle.  A zero is transmitted as 2/3\*1020us low and 1/3\*1020us high.  A one is transmitted as 1/3\*1020us Low and 2/3\*1020us high.  
 
 ## Leading Gap
 
