@@ -16,7 +16,7 @@ I wasn't motivated enough to take apart the remote or pull the wall control out,
 
 # The Signal
 
-I setup the Flipper Zero to do Read RAW at 303.875Mhz with AM650 modulation, based on what I read in the Amazon listing.  I also set the Threshold to -70dB.  With no threshold, the capture is large and full of garbage.  At -70dB, the Flipper Zero captured only when I pressed the button on the remote.  The .sub files are in the [captured_fans] directory.  The captured signals are already demodulated.  The negative numbers are the number of microseconds the signal is low and the positive numbers are the number of microsececonds the signal is high.  For some reason, this was not obvious to me even after reading descriptions of the file format a couple times.  
+I setup the Flipper Zero to do Read RAW at 303.875Mhz with AM650 modulation, based on what I read in the Amazon listing.  I also set the Threshold to -70dB.  With no threshold, the capture is large and full of garbage.  At -70dB, the Flipper Zero captured only when I pressed the button on the remote.  The .sub files are in the [captured_fans] directory.  The captured signals are already demodulated.  The negative numbers are the number of microseconds the signal is low and the positive numbers are the number of microseconds the signal is high.  For some reason, this was not obvious to me even after reading descriptions of the file format a couple times.  
 
 Here's the first capture pressing the "Low" button.  It seems to be a bunch of repeated sequences.  
 
@@ -28,7 +28,7 @@ Zooming in one sequence, this is what we see.  In order to understand what the p
 
 ![Zoomed In Low](images/zoomed_lr_low_capture.png "Zoomed In Capture of Low Sequence")
 
-![Zoomed In Medium](images/zoomed_lr_med_capture.png "Zoomed in Caputre of Medium Sequence")
+![Zoomed In Medium](images/zoomed_lr_med_capture.png "Zoomed in Capture of Medium Sequence")
 
 First off, this appears to be PWM encoding.  I have looked at IR remote encoding before and this does not look like the NEC or Manchester encoding I've seen in the past.  An encoded 0 looks like a longer low period followed by a short high period.  A 1 looks like a short low period followed by a long high period.  I may have that backwards, but as long as I'm consistent, the signals can be decoded.  
 
@@ -46,7 +46,7 @@ After determining which bits in the sequence represent button pushes, I wanted t
 
 ![Fan Sequence Switch 0001b](images/zoomed_f0001_off_annotate.png "Fan Sequence with Switches in 0001b Position")
 
-![Fan Seqence Switch 0010b](images/zoomed_f0010_off_annotate.png "Fan Sequence with Switches in 0010b Position")
+![Fan Sequence Switch 0010b](images/zoomed_f0010_off_annotate.png "Fan Sequence with Switches in 0010b Position")
 
 The highlighted bit sequence encodes the dip switch settings.  Presumably, the fan canopy module matches the address pattern with its own dip switch settings to determine if it should react to the sequence.  The 4 switches allow encoding of up to 16 different fan addresses.  That should cover most residential installations.  
 
