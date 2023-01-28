@@ -4,27 +4,31 @@
 
 # Motivation
 
-I recently got a Flipper Zero and wanted to learn the sub-Ghz radio features.  I initially looked at some more complex radios, but decided I had too many knowledge gaps.  So, I picked the simplest radio transmitter I could find in the house.  I have never worked with radio transceivers professionally or as a hobby.  The closest thing I've looked at is IR remote transmitters and receivers.  This was a good method to learn how to use the "Raw Read" feature and interpret the captured files.  Then write a simple script to generate the files and control the radio.  I also found the documentation of these simple fan control protocols is sparse.  
+I recently got a [Flipper Zero](https://flipperzero.one/) and wanted to learn the sub-Ghz radio features.  I initially looked at some more complex radios, but decided I had too many knowledge gaps.  So, I picked the simplest radio transmitter I could find in the house.  I have never worked with radio transceivers professionally or as a hobby.  The closest thing I've looked at is IR remote transmitters and receivers.  
+
+This was a good method to learn how to use the "Raw Read" feature and interpret the captured files.  Then write a simple script to generate the files and control the radio.  I also found the documentation of these simple fan control protocols is sparse.  Maybe this readme is useful for just understanding the protocol.  
 
 # The Fan Hardware
+
+These are the remotes for the ceiling fan in my office.  
 
 ![Handheld Remote](images/remote.jpg "Fan Remote")
 
 ![Wall Control](images/wall_control.jpg "Wall Control")
 
-I wasn't motivated enough to take apart the remote or pull the wall control out, so I basically looked on Amazon to find a similar looking fan control.  I found [this](https://www.amazon.com/Eogifee-Universal-Ceiling-Control-UC-9050T/dp/B08DM49LHV/ref=sr_1_50?crid=105P4GFNQWPR0&keywords=fan%2Bremote&qid=1674324698&sprefix=fan%2Bremot%2Caps%2C146&sr=8-50&th=1).  Basically, this looks to be a copy of an older Harbor Breeze fan control.  This particular device used a 303.9Mhz radio and has the same dip switches as my remote.  Presumably it is similar.
+I wasn't motivated enough to take apart the remote or pull the wall control out, so I looked on Amazon to find a similar fan control.  I found [this](https://www.amazon.com/Eogifee-Universal-Ceiling-Control-UC-9050T/dp/B08DM49LHV/ref=sr_1_50?crid=105P4GFNQWPR0&keywords=fan%2Bremote&qid=1674324698&sprefix=fan%2Bremot%2Caps%2C146&sr=8-50&th=1).  Basically, this looks to be a copy of an older Harbor Breeze fan control.  This particular device uses a 303.9Mhz radio and has the same dip switches as my remote.  Presumably it is similar.
 
 # The Signal
 
-I setup the Flipper Zero to do Read RAW at 303.875Mhz with AM650 modulation, based on what I read in the Amazon listing.  I also set the Threshold to -70dB.  With no threshold, the capture is large and full of garbage.  At -70dB, the Flipper Zero captured only when I pressed the button on the remote.  The .sub files are in the [captured_fans] directory.  The captured signals are already demodulated.  The negative numbers are the number of microseconds the signal is low and the positive numbers are the number of microseconds the signal is high.  For some reason, this was not obvious to me even after reading descriptions of the file format a couple times.  
+I setup the Flipper Zero to do Read RAW at 303.875Mhz with AM650 modulation, based on what I read in the Amazon listing.  I also set the Threshold to -70dB.  With no threshold, the capture is large and full of garbage.  At -70dB, the Flipper Zero captured only when I pressed the button on the remote.  The .sub files are in the [captured_fans](captured_fans) directory.  The captured signals are already demodulated.  The negative numbers are the number of microseconds the signal is low or logic zero and the positive numbers are the number of microseconds the signal is high or logic one.  For some reason, this was not obvious to me even after reading descriptions of the file format a couple times.  
 
-Here's the first capture pressing the "Low" button.  It seems to be a bunch of repeated sequences.  
+Here's the first capture pressing the "Low" button.  It seems to be a bunch of repeated sequences.  I used this [Flipper Pulse Plotter](https://lab.flipper.net/pulse-plotter) site to visualize the captured signals.  I think the timing was too messy for the site to decode automatically.  
 
 ![Initial Capture](images/initial_captures.png)
 
 ## Button Press Encoding
 
-Zooming in one sequence, this is what we see.  In order to understand what the pulses mean, we need to capture different button presses.  I included images of the "Low" and "Medium" buttons.  I captured all 5 buttons on the remote.  
+Zooming in one sequence, this is what we see.  In order to understand what the pulses mean, we need to capture different button presses.  I included images of the "Low" and "Medium" buttons.  I captured all 5 buttons on the remote.  All the captured sequences are in [captured_fans](captured_fans).
 
 ![Zoomed In Low](images/zoomed_lr_low_capture.png "Zoomed In Capture of Low Sequence")
 
@@ -93,3 +97,28 @@ The script outputs a unique file name for each of the 5 button presses.  The use
 ## Universal Files
 
 One valuable output is a .sub file that sends the same command to all 16 possible addresses.  If you want to carry around the universal .sub file for turning the fan off or flipping the light to try out in the world, this is your command line parameter.  
+
+## Command Line parameters
+
+-------------------------------------------------
+| **Parameter**     | **Description**                           |   
+|---------------    | ----------------                          |
+|-f \<value>        | Radio Frequency in Mhz                    |
+|-n \<string>       | Prefix String for output sub files        |
+|-a \<hex digit>    | Fan Module Address                        |
+|-d                 | Set the Dimmer bit in the command stream  |
+|-u                 | Build a config file that transmits to all addresses. Address parameter will be ignored    |
+
+## Typical Use
+
+**Generate Files for a Single Fan**
+
+    fan_controls.py -n office -a 0xC -d
+
+This will generate 5 .sub files called office_low.sub, office_med.sub, office_high.sub, office_light.sub, and office_off.sub.  Each one will the specified command to a fan on 303.875Mhz (default if no -f parameter) with the dip switch positions off, off, on, on and dimmer on.  
+
+**Generate Universal files**
+
+    fan_controls.py -n all -u -d -f 430
+
+This will generate 5 .sub files just as above, but with the prefix "all".  Like all_off.sub.  Each sub file will send 16 commands and iterate through all possible dip switch settings for address.  
